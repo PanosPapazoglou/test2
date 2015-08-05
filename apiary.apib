@@ -18,21 +18,22 @@ the paths one may follow to accomplish particular tasks.
 3. An API client will request the personal attributes of a given registered SSN.
 
 #Media types in use
+Currently the API uses [Collection+JSON](http://amundsen.com/media-types/collection/) as in it's responses.
+
+#Authentication
 API Authentication is provided via the standard 
-Authorization HTTP header. Authentication methods 
-supported include Token and Signature. 
+`Authorization` HTTP header. Authentication methods 
+supported include `Token` and `Signature`. 
 The first method requires the client simply providing 
 a shared secret, 
 while the second method is implemented according 
-to the IETF http-signature standard.
+to the [IETF http-signature](https://datatracker.ietf.org/doc/draft-cavage-http-signatures/) standard.
 
 # Home [/]
 
 This is the home resource. An API client
 
-[Test Link](https://tools.ietf.org/html/rfc5988)
-
-## Retrieve the Entry Point [GET]
+## API Discovery [GET]
 
 + Response 200 (application/json)
 
