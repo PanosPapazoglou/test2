@@ -1,183 +1,261 @@
 FORMAT: 1A
-HOST: http://polls.apiblueprint.org/
+HOST: http://funhub-devel.gunet.gr/
 
-# SSN API (amka-services) 
-# About this API
-This API provides a resource to view, manage and validate information about SSN (AMKA) numbers and their related metadata.
+# SSN API (amka-services)
+## About this API
+This API provides a resource to view, manage and validate information
+about SSN (AMKA) numbers and their related metadata.
 
-# Business Process
-Here we define what this API's purpose is, it's workflows and what are 
+## Business Process
+Here we define what this API's purpose is, it's workflows and what are
 the paths one may follow to accomplish particular tasks.
+
 1. Check if a given SSN has been registered, optionally validating some personal attributes
 2. Retrieve a set of personal attributes associated with the given SSN
 
-# Home [/]
+## Use Cases: state transitions.
 
+1. An API client will discover the available resources by accessing the API endpoint.
+2. An API client will search for a given SSN value in the collection of registered SSN's, optionally including some personal attributes for validation.
+3. An API client will request the personal attributes of a given registered SSN.
+
+## Media types in use
+
+Currently the API uses [Collection+JSON](http://amundsen.com/media-types/collection/) as 
+in it's responses.
+
+## Authentication
+
+API Authentication is provided via the standard `Authorization` HTTP header. Authentication methods supported include
+`Token` and `Signature`. The first method requires the client simply providing a shared secret, while
+the second method is implemented according to the [IETF http-signature](https://datatracker.ietf.org/doc/draft-cavage-http-signatures/) standard.
+
+# Home [/]
 This is the home resource. An API client
 
-[Test Link](https://tools.ietf.org/html/rfc5988)
-
-## Retrieve the Entry Point [GET]
-
-+ Response 200 (application/json)
++ Model (application/vnd.collection+json)
 
         {
-            "questions_url": "/questions2"
-        }
-
-## Group Question
-
-Resources related to questions in the API.
-
-## Question [/questions/{question_id}]
-
-A Question object has the following attributes:
-
-+ question
-+ published_at - An ISO8601 date when the question was published.
-+ url
-+ choices - An array of Choice objects.
-
-+ Parameters
-    + question_id: 1 (required, number) - ID of the Question in form of an integer
-
-### View a Questions Detail [GET]
-
-+ Response 200 (application/json)
-
-        {
-            "question": "Favourite programming language?",
-            "published_at": "2014-11-11T08:40:51.620Z",
-            "url": "/questions/1",
-            "choices": [
+          "collection" :
+          {
+            "version" : "1.0",
+            "href" : "...",
+            "links": [
                 {
-                    "choice": "Swift",
-                    "url": "/questions/1/choices/1",
-                    "votes": 2048
-                }, {
-                    "choice": "Python",
-                    "url": "/questions/1/choices/2",
-                    "votes": 1024
-                }, {
-                    "choice": "Objective-C",
-                    "url": "/questions/1/choices/3",
-                    "votes": 512
-                }, {
-                    "choice": "Ruby",
-                    "url": "/questions/1/choices/4",
-                    "votes": 256
+                    "href": "https://git.gunet.gr/web-services/amka-services-spec/raw/master/profiles/SSN.xml",
+                    "rel": "profile"
+                },
+                {
+                    "href": "...",
+                    "rel": "ssn-collection"
                 }
             ]
+          }
         }
 
-## Choice [/questions/{question_id}/choices/{choice_id}]
+## API Discovery [GET]
+* Request
+    * Headers
+    
+            Accept: application/vnd.collection+json
+            Authorization: Token XXX
 
-+ Parameters
-    + question_id: 1 (required, number) - ID of the Question in form of an integer
-    + choice_id: 1 (required, number) - ID of the Choice in form of an integer
+* Response 200
 
-### Vote on a Choice [POST]
+    [Home][]
 
-This action allows you to vote on a question's choice.
+# Group SSN resources
 
-+ Response 201
+# SSN Collection [/ssn/{?familyName,birthDate,ssn}]
+A collection of SSN resources.
+
++ Model (application/vnd.collection+json;profile=https://git.gunet.gr/web-services/amka-services-spec/raw/master/profiles/ValidateSSN.xml)
+
+    + Parameters
+    
+        + familyName: `Παπαδόπουλος` (text, optional) - surname or family name to validate with.
+        + birthDate: `1981-05-10` (date, optional) - birth date in ISO 8061 format.
+        + ssn: `12093134234` (text) - the SSN to validate with
+        
+    + Body
+    
+            {
+              "collection" :
+              {
+                "version" : "1.0",
+                "href" : "...",
+                "items": [
+                    {
+                        "href": "...",
+                        "data": [
+                            {
+                                "name": "ssn",
+                                "value": "12093134234"
+                            }
+                        ]
+                    }
+                ],
+                "queries": [
+                    {
+                        "href": "...",
+                        "rel": "validate-ssn",
+                        "prompt": "Validate an SSN and personal attributes",
+                        "data": [
+                            {
+                                "name": "familyName",
+                                "value": ""
+                            },
+                            {
+                                "name": "birthDate",
+                                "value": ""
+                            },
+                            {
+                                "name": "ssn",
+                                "value": ""
+                            }
+                        ]
+                    }
+                ]
+              }
+            }
+
+
+## Validate SSN [GET]
+This action retrieves a list of SSN resources from the collection. Currently,
+the resource supports retrieving at most one SSN resource, based on the value
+of the `ssn` parameter. Additionally one may provide `familyName` and `birthDate` to validate the data
+against the specific SSN.
+
++ Relation: validate-ssn
+
++ Request Validate an SSN with personal attributes
 
     + Headers
+    
+            Accept: application/vnd.collection+json
+            Authorization: Token XXX
+            
++ Response 200 
 
-            Location: /questions/1
+    [SSN Collection][]
+    
++ Response 200
 
-## Questions Collection [/questions{?page}]
-
-+ Parameters
-    + page: 1 (optional, number) - The page of questions to return
-
-### List All Questions [GET]
-
-+ Response 200 (application/json)
-
-    + Headers
-
-            Link: </questions?page=2>; rel="next"
-
+    If the SSN is not registered
+   
     + Body
 
-            [
-                {
-                    "question": "Favourite programming language?",
-                    "published_at": "2014-11-11T08:40:51.620Z",
-                    "url": "/questions/1",
-                    "choices": [
-                        {
-                            "choice": "Swift",
-                            "url": "/questions/1/choices/1",
-                            "votes": 2048
-                        }, {
-                            "choice": "Python",
-                            "url": "/questions/1/choices/2",
-                            "votes": 1024
-                        }, {
-                            "choice": "Objective-C",
-                            "url": "/questions/1/choices/3",
-                            "votes": 512
-                        }, {
-                            "choice": "Ruby",
-                            "url": "/questions/1/choices/4",
-                            "votes": 256
-                        }
-                    ]
-                }
-            ]
+            {
+              "collection" :
+              {
+                "version" : "1.0",
+                "href" : "..."
+              }
+            } 
 
-### Create a New Question [POST]
-
-You may create your own question using this action. It takes a JSON
-object containing a question and a collection of answers in the
-form of choices.
-
-+ question (string) - The question
-+ choices (array[string]) - A collection of choices.
-
-+ Request (application/json)
-
-        {
-            "question": "Favourite programming language?",
-            "choices": [
-                "Swift",
-                "Python",
-                "Objective-C",
-                "Ruby"
-            ]
-        }
-
-+ Response 201 (application/json)
-
++ Request Fail to validate SSN's personal attributes
+    
     + Headers
+    
+            Accept: application/vnd.collection+json
+            Authorization: Token XXX
+        
++ Response 400 (application/vnd.collection+json;profile=https://git.gunet.gr/web-services/amka-services-spec/raw/master/profiles/ValidateSSN.xml)
 
-            Location: /questions/2
+    If the SSN is registered but the parameters provided do not validate the response contains no items and an error is reported.
 
     + Body
 
             {
-                "question": "Favourite programming language?",
-                "published_at": "2014-11-11T08:40:51.620Z",
-                "url": "/questions/2",
-                "choices": [
+              "collection" :
+              {
+                "version" : "1.0",
+                "href" : "...",
+                "error": {
+                    "title" : "Invalid data",
+                    "code" : "ssnerr002,
+                    "message" : "The parameters provided to do not validate for the given SSN"  
+                }
+              }
+            }
+
+
++ Request Unauthenticated request
+    
+    + Headers
+    
+            Accept: application/vnd.collection+json
+
++ Response 403 (application/vnd.collection+json;profile=https://git.gunet.gr/web-services/amka-services-spec/raw/master/profiles/ValidateSSN.xml)
+
+    In case the client doesn't provide satisfactory authentication credentials the API responds with 403 HTTP Forbidden.
+
+    + Body
+
+            {
+              "collection" :
+              {
+                "version" : "1.0",
+                "href" : "...",
+                "error": {
+                    "title" : "Forbidden",
+                    "code" : "ssnerr001,
+                    "message" : "Valid authentication was not provided. Please try again with correct authentication."  
+                }
+              }
+            }
+
+
+# SSN Entry [/ssn/{ssn}]
+A resource for a registered SSN.
+
++ Model (application/vnd.collection+json;profile=https://git.gunet.gr/web-services/amka-services-spec/raw/master/profiles/ValidateSSN.xml)
+
+    + Body
+    
+            {
+              "collection" :
+              {
+                "version" : "1.0",
+                "href" : "...",
+                "links": [
                     {
-                        "choice": "Swift",
-                        "url": "/questions/2/choices/1",
-                        "votes": 0
-                    }, {
-                        "choice": "Python",
-                        "url": "/questions/2/choices/2",
-                        "votes": 0
-                    }, {
-                        "choice": "Objective-C",
-                        "url": "/questions/2/choices/3",
-                        "votes": 0
-                    }, {
-                        "choice": "Ruby",
-                        "url": "/questions/2/choices/4",
-                        "votes": 0
+                        "rel": "collection",
+                        "href": "..."
+                    }
+                ],
+                "items": [
+                    {
+                        "href": "...",
+                        "data": [
+                            {
+                                "name": "ssn",
+                                "value": "12093134234"
+                            }
+                        ]
                     }
                 ]
+              }
             }
+
+## Retrieve SSN [GET]
+This action retrieves specific SSN resource
+
++ Relation: ssn-entry
+
++ Parameters
+    + ssn: `12093134234` (text) - the SSN to validate with
+
++ Request
+
+    + Headers
+    
+            Accept: application/vnd.collection+json
+            
++ Response 200 
+
+    [SSN Entry][]
+    
++ Response 404
+
+
